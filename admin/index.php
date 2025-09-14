@@ -47,6 +47,9 @@ if ($_POST && isset($_POST['username'], $_POST['password'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Administration - Astiom Photography</title>
     <link rel="stylesheet" href="admin.css">
+    <link rel="icon" href="../logo/astiom_icon_dark.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" href="../logo/astiom_icon.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="../logo/astiom_icon.png"> <!-- Fallback par défaut -->
 </head>
 <body class="login-page">
     <div class="login-container">

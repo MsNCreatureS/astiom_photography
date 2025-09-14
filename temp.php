@@ -1,9 +1,9 @@
 <?php
 // Paramètres de connexion
-$host = "localhost";
-$dbname = "astiom_photography_cms";
-$user = "root";      // <-- Mets ton user MySQL
-$pass = "";          // <-- Mets ton mot de passe MySQL
+$host = "127.0.0.1:3306";
+$dbname = "u815934570_astiom_photogr";
+$user = "u815934570_erwan76";      // <-- Mets ton user MySQL
+$pass = "*Erwan4030064100";          // <-- Mets ton mot de passe MySQL
 
 try {
     // Connexion PDO

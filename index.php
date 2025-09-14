@@ -4,6 +4,18 @@ require_once 'config.php';
 // Initialiser le CMS
 $cms = new CMS();
 
+// Gestion des messages de retour du formulaire de contact
+$successMessage = '';
+$errorMessage = '';
+
+if (isset($_GET['success'])) {
+    $successMessage = htmlspecialchars(urldecode($_GET['success']));
+}
+
+if (isset($_GET['error'])) {
+    $errorMessage = htmlspecialchars(urldecode($_GET['error']));
+}
+
 // Récupérer toutes les données
 $siteTitle = $cms->getConfig('site_title');
 $siteDescription = $cms->getConfig('site_description');
@@ -26,23 +38,8 @@ $aboutStats = $cms->getAboutStats();
 $contactInfo = $cms->getContactInfo();
 $socialLinks = $cms->getSocialLinks();
 
-// Traitement du formulaire de contact
-if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['message'])) {
-    $name = sanitizeInput($_POST['name']);
-    $email = sanitizeInput($_POST['email']);
-    $subject = sanitizeInput($_POST['subject']);
-    $message = sanitizeInput($_POST['message']);
-    
-    if (!empty($name) && !empty($email) && !empty($subject) && !empty($message)) {
-        if ($cms->saveContactMessage($name, $email, $subject, $message)) {
-            $contactSuccess = true;
-        } else {
-            $contactError = true;
-        }
-    } else {
-        $contactError = true;
-    }
-}
+// Récupérer l'email SMTP pour le contact
+$contactEmail = $cms->getConfig('smtp_username') ?: 'contact@astiomphotography.com';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -70,6 +67,31 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
     <link rel="icon" href="<?php echo htmlspecialchars($faviconDark); ?>"> <!-- Fallback par défaut -->
 </head>
 <body>
+    <!-- Messages de notification -->
+    <?php if ($successMessage): ?>
+    <div class="notification notification-success" id="notification">
+        <div class="container">
+            <i class="fas fa-check-circle"></i>
+            <span><?php echo $successMessage; ?></span>
+            <button class="notification-close" onclick="closeNotification()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($errorMessage): ?>
+    <div class="notification notification-error" id="notification">
+        <div class="container">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span><?php echo $errorMessage; ?></span>
+            <button class="notification-close" onclick="closeNotification()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+    <?php endif; ?>
+
     <!-- Header / Navigation -->
     <header class="header">
         <nav class="navbar">
@@ -83,10 +105,10 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
                         <a href="#accueil" class="nav-link">Accueil</a>
                     </li>
                     <li class="nav-item">
-                        <a href="#portfolio" class="nav-link">Portfolio</a>
+                        <a href="#services" class="nav-link">Services</a>
                     </li>
                     <li class="nav-item">
-                        <a href="#services" class="nav-link">Services</a>
+                        <a href="#portfolio" class="nav-link">Portfolio</a>
                     </li>
                     <li class="nav-item">
                         <a href="#about" class="nav-link">À propos</a>
@@ -122,10 +144,16 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
                 </div>
             </div>
             <div class="hero-image">
-                <div class="image-placeholder">
-                    <i class="fas fa-camera"></i>
-                    <p>Photo portrait en vedette</p>
-                </div>
+                <?php 
+                $heroImage = $cms->getConfig('hero_image');
+                if ($heroImage && !empty($heroImage)): ?>
+                    <img src="<?= htmlspecialchars($heroImage) ?>" alt="<?= htmlspecialchars($heroSection['title'] ?? 'Astiom Photography') ?>" class="hero-main-image">
+                <?php else: ?>
+                    <div class="image-placeholder">
+                        <i class="fas fa-camera"></i>
+                        <p>Photo portrait en vedette</p>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
         
@@ -171,7 +199,7 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
             <div class="portfolio-grid">
                 <?php foreach ($portfolioItems as $item): ?>
                 <div class="portfolio-item">
-                    <div class="portfolio-image">
+                    <div class="portfolio-image" <?php if ($item['image_path'] && $item['image_path'] !== 'placeholder'): ?>data-image="<?php echo htmlspecialchars($item['image_path']); ?>" data-title="<?php echo htmlspecialchars($item['title']); ?>" data-subtitle="<?php echo htmlspecialchars($item['subtitle']); ?>" style="cursor: pointer;"<?php endif; ?>>
                         <?php if ($item['image_path'] && $item['image_path'] !== 'placeholder'): ?>
                             <img src="<?php echo htmlspecialchars($item['image_path']); ?>" alt="<?php echo htmlspecialchars($item['title']); ?>">
                         <?php else: ?>
@@ -187,10 +215,6 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
                     </div>
                 </div>
                 <?php endforeach; ?>
-            </div>
-            
-            <div class="portfolio-cta">
-                <a href="#" class="btn btn-primary">Voir tout le portfolio</a>
             </div>
         </div>
     </section>
@@ -214,10 +238,16 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
                     </div>
                 </div>
                 <div class="about-image">
-                    <div class="image-placeholder">
-                        <i class="fas fa-user-circle"></i>
-                        <p>Photo du photographe</p>
-                    </div>
+                    <?php 
+                    $aboutImage = $cms->getConfig('about_image');
+                    if ($aboutImage && !empty($aboutImage)): ?>
+                        <img src="<?= htmlspecialchars($aboutImage) ?>" alt="<?= htmlspecialchars($aboutSection['title'] ?? 'À propos') ?>" class="about-main-image">
+                    <?php else: ?>
+                        <div class="image-placeholder">
+                            <i class="fas fa-user-circle"></i>
+                            <p>Photo du photographe</p>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -254,29 +284,17 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
                     </div>
                 </div>
                 
-                <form class="contact-form" method="POST" action="#contact">
-                    <?php if (isset($contactSuccess)): ?>
-                        <div class="alert alert-success">Votre message a été envoyé avec succès !</div>
-                    <?php endif; ?>
-                    
-                    <?php if (isset($contactError)): ?>
-                        <div class="alert alert-error">Erreur lors de l'envoi du message. Veuillez réessayer.</div>
-                    <?php endif; ?>
-                    
-                    <div class="form-group">
-                        <input type="text" id="name" name="name" placeholder="Votre nom" required value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>">
+                <div class="contact-simple">
+                    <div class="contact-email">
+                        <h3>Contactez-moi directement</h3>
+                        <p>Pour toute demande de devis ou information, n'hésitez pas à m'écrire :</p>
+                        <a href="mailto:<?php echo htmlspecialchars($contactEmail); ?>?subject=Demande de contact - Astiom Photography" class="email-link">
+                            <i class="fas fa-envelope"></i>
+                            <?php echo htmlspecialchars($contactEmail); ?>
+                        </a>
+                        <p class="email-note">Votre client email s'ouvrira automatiquement avec un sujet pré-rempli.</p>
                     </div>
-                    <div class="form-group">
-                        <input type="email" id="email" name="email" placeholder="Votre email" required value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="subject" name="subject" placeholder="Sujet" required value="<?php echo isset($_POST['subject']) ? htmlspecialchars($_POST['subject']) : ''; ?>">
-                    </div>
-                    <div class="form-group">
-                        <textarea id="message" name="message" placeholder="Votre message" rows="5" required><?php echo isset($_POST['message']) ? htmlspecialchars($_POST['message']) : ''; ?></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Envoyer le message</button>
-                </form>
+                </div>
             </div>
         </div>
     </section>
@@ -291,9 +309,28 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
                 <p class="footer-text">
                     <?php echo htmlspecialchars($copyrightText); ?>
                 </p>
+                <div class="footer-admin">
+                    <a href="admin/" class="admin-link">Administration</a>
+                </div>
             </div>
         </div>
     </footer>
+
+    <!-- Modal pour l'aperçu d'image -->
+    <div id="imageModal" class="image-modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <img id="modalImage" src="" alt="">
+            <div class="modal-info">
+                <h3 id="modalTitle"></h3>
+                <p id="modalSubtitle"></p>
+            </div>
+            <div class="modal-instructions">
+                <i class="fas fa-mouse-pointer"></i> Cliquer en dehors pour fermer
+                <i class="fas fa-keyboard"></i> Echap pour fermer
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript -->
     <script>
@@ -314,6 +351,74 @@ if ($_POST && isset($_POST['name'], $_POST['email'], $_POST['subject'], $_POST['
         
         // Écouter les changements de thème
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateFavicon);
+        
+        // Modal pour l'aperçu d'image du portfolio
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubtitle = document.getElementById('modalSubtitle');
+        const closeModal = document.querySelector('.close-modal');
+        
+        // Function pour ouvrir le modal
+        function openImageModal(imgSrc, title, subtitle) {
+            modalImg.src = imgSrc;
+            modalTitle.textContent = title || 'Image du portfolio';
+            modalSubtitle.textContent = subtitle || '';
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Function pour fermer le modal
+        function closeImageModal() {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Ajouter les événements de clic sur les images du portfolio
+        document.querySelectorAll('.portfolio-image[data-image]').forEach(portfolioImage => {
+            portfolioImage.addEventListener('click', function() {
+                const imgSrc = this.getAttribute('data-image');
+                const title = this.getAttribute('data-title');
+                const subtitle = this.getAttribute('data-subtitle');
+                
+                openImageModal(imgSrc, title, subtitle);
+            });
+        });
+        
+        // Fermer le modal
+        closeModal.addEventListener('click', closeImageModal);
+        
+        window.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeImageModal();
+            }
+        });
+        
+        // Fermer avec Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.style.display === 'block') {
+                closeImageModal();
+            }
+        });
+
+        // Gestion des notifications
+        function closeNotification() {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 300);
+            }
+        }
+
+        // Auto-fermeture des notifications après 5 secondes
+        const notification = document.getElementById('notification');
+        if (notification) {
+            setTimeout(() => {
+                closeNotification();
+            }, 5000);
+        }
     </script>
     <script src="script.js"></script>
 </body>

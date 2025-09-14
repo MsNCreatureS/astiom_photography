@@ -84,17 +84,6 @@ CREATE TABLE social_links (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Table pour les messages de contact
-CREATE TABLE contact_messages (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
-    email VARCHAR(191) NOT NULL,
-    subject VARCHAR(191) NOT NULL,
-    message TEXT NOT NULL,
-    is_read BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Table pour l'administration
 CREATE TABLE admin_users (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -117,7 +106,9 @@ INSERT INTO site_config (config_key, config_value, description) VALUES
 ('logo_dark', 'logo/astiom_logoV2.png', 'Logo pour fond clair'),
 ('favicon_light', 'logo/astiom_icon_dark.png', 'Favicon pour mode clair'),
 ('favicon_dark', 'logo/astiom_icon.png', 'Favicon pour mode sombre'),
-('copyright_text', '© 2025 Astiom Photography. Tous droits réservés.', 'Texte de copyright');
+('copyright_text', '© 2025 Astiom Photography. Tous droits réservés.', 'Texte de copyright'),
+('hero_image', '', 'Image principale de la section hero'),
+('about_image', '', 'Image de la section à propos');
 
 -- Sections de contenu
 INSERT INTO content_sections (section_name, title, subtitle, content, image_path) VALUES

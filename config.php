@@ -4,10 +4,10 @@
  */
 
 // Configuration de la base de données
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'astiom_photography_cms');
-define('DB_USER', 'root'); // Changez selon votre configuration WAMP
-define('DB_PASS', '');     // Changez selon votre configuration WAMP
+define('DB_HOST', '127.0.0.1:3306');
+define('DB_NAME', 'u815934570_astiom_photogr');
+define('DB_USER', 'u815934570_erwan76'); // Changez selon votre configuration WAMP
+define('DB_PASS', '*Erwan4030064100');     // Changez selon votre configuration WAMP
 define('DB_CHARSET', 'utf8mb4');
 
 // Configuration de sécurité
@@ -102,12 +102,6 @@ class CMS {
         return $stmt->fetchAll();
     }
     
-    // Enregistrer un message de contact
-    public function saveContactMessage($name, $email, $subject, $message) {
-        $stmt = $this->db->prepare("INSERT INTO contact_messages (name, email, subject, message) VALUES (?, ?, ?, ?)");
-        return $stmt->execute([$name, $email, $subject, $message]);
-    }
-    
     // Mettre à jour une configuration
     public function updateConfig($key, $value) {
         $stmt = $this->db->prepare("UPDATE site_config SET config_value = ?, updated_at = NOW() WHERE config_key = ?");
@@ -118,6 +112,31 @@ class CMS {
     public function updateSection($section_name, $title, $subtitle = null, $content = null) {
         $stmt = $this->db->prepare("UPDATE content_sections SET title = ?, subtitle = ?, content = ?, updated_at = NOW() WHERE section_name = ?");
         return $stmt->execute([$title, $subtitle, $content, $section_name]);
+    }
+    
+    // Ajouter une nouvelle statistique
+    public function addAboutStat($stat_number, $stat_label, $order_position = 0) {
+        $stmt = $this->db->prepare("INSERT INTO about_stats (stat_number, stat_label, order_position) VALUES (?, ?, ?)");
+        return $stmt->execute([$stat_number, $stat_label, $order_position]);
+    }
+    
+    // Mettre à jour une statistique
+    public function updateAboutStat($id, $stat_number, $stat_label, $order_position = 0) {
+        $stmt = $this->db->prepare("UPDATE about_stats SET stat_number = ?, stat_label = ?, order_position = ?, updated_at = NOW() WHERE id = ?");
+        return $stmt->execute([$stat_number, $stat_label, $order_position, $id]);
+    }
+    
+    // Supprimer une statistique
+    public function deleteAboutStat($id) {
+        $stmt = $this->db->prepare("DELETE FROM about_stats WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
+    
+    // Récupérer une statistique par ID
+    public function getAboutStatById($id) {
+        $stmt = $this->db->prepare("SELECT * FROM about_stats WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
     }
 }
 
